@@ -536,10 +536,39 @@ def generate_ai_insight(df, category, brand):
     
     hero_sales_curr = hero_curr['TotalSales'].iloc[0] if len(hero_curr) > 0 else 0
     hero_sales_sply = hero_sply['TotalSales'].iloc[0] if len(hero_sply) > 0 else 0
+    hero_abr_curr = hero_curr['ABR'].iloc[0] if len(hero_curr) > 0 else 0
     
     # Get values for Traffic Range
     traffic_curr = df_curr[df_curr['Basket_Range'] == traffic_range]
     traffic_bills_curr = traffic_curr['TotalBills'].iloc[0] if len(traffic_curr) > 0 else 0
+    
+    # Find next range after Hero Range for GWP suggestion
+    basket_order = [
+        '< 49', '49 - 98', '99 - 148', '149 - 198', '199 - 248',
+        '249 - 298', '299 - 348', '349 - 398', '399 - 448', '449 - 498',
+        '499 - 548', '549 - 598', '599 - 648', '649 - 698', '>= 699'
+    ]
+    
+    try:
+        hero_idx = basket_order.index(hero_range)
+        next_range = basket_order[hero_idx + 1] if hero_idx + 1 < len(basket_order) else '>= 699'
+        
+        # Extract starting price from next range
+        if next_range == '>= 699':
+            next_price = 699
+        elif next_range == '< 49':
+            next_price = 0
+        else:
+            # Extract first number from range like "149 - 198"
+            next_price = int(next_range.split(' - ')[0])
+        
+        # Calculate gap
+        gap = next_price - hero_abr_curr if hero_abr_curr > 0 else 0
+        
+    except (ValueError, IndexError):
+        next_range = "ไม่สามารถระบุได้"
+        next_price = 0
+        gap = 0
     
     # Create comparison table (SPLY vs CURRENT side by side)
     comparison_df = df_sply[['Basket_Range', 'TotalSales', 'TotalBills']].rename(
@@ -562,10 +591,14 @@ def generate_ai_insight(df, category, brand):
     
     📌 ข้อมูลสำคัญที่คำนวณไว้แล้ว:
     - Hero Range (ขายดีสุด): {hero_range}
+      → ABR (ค่าเฉลี่ยต่อบิล): {hero_abr_curr:,.2f} บาท
       → Sales SPLY: {hero_sales_sply:,.2f}
       → Sales CURRENT: {hero_sales_curr:,.2f}
     - Traffic Range (ดึงคนเก่งสุด): {traffic_range}
       → Bills CURRENT: {traffic_bills_curr:,.0f}
+    - Next Range (ช่วงถัดไป): {next_range}
+      → เป้าหมาย GWP: {next_price}+ บาท
+      → Gap (ส่วนต่าง): ขาดอีก {gap:.0f} บาท (จาก ABR ของ Hero Range)
     
     ---
     
@@ -593,8 +626,8 @@ def generate_ai_insight(df, category, brand):
     - 2. ดันลูกค้ากลุ่ม {hero_range}: [วิธีจัดเซต/ของแถม ให้ซื้อเพิ่มไปช่วงถัดไป]
     
     #### Suggest Basket Size
-    - 🎯 ยอดซื้อเป้าหมาย: [ราคาเริ่มต้นของ Range ถัดไปจาก {hero_range}] บาท
-    - 🗣️ เหตุผล: [อธิบายสั้นๆ ว่าเป็นยอดที่สูงกว่า {hero_range} นิดหน่อย ช่วยดึงให้ลูกค้าซื้อเพิ่ม]
+    - 🎯 ยอดซื้อเป้าหมาย: {next_price}+ บาท
+    - 🗣️ เหตุผล: [อธิบายสั้นๆ ว่าทำไมถึงแนะนำยอดนี้ โดยอาจพิจารณาจาก: (1) ค่าเฉลี่ยในช่วง {hero_range} อยู่ที่ {hero_abr_curr:.0f} บาท ขาดอีก {gap:.0f} บาท ก็จะเข้าช่วง {next_range}, (2) ความคุ้มค่าของของแถม, (3) จิตวิทยาลูกค้า - ให้เลือกมุมที่เหมาะสมที่สุดตามข้อมูล]
     """
 
     try:
