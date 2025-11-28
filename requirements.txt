@@ -1,0 +1,7 @@
+streamlit
+pandas
+google-cloud-bigquery
+openai
+numpy<2
+protobuf<5
+db-dtypes

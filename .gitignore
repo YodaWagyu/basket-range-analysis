@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Streamlit secrets (IMPORTANT!)
+.streamlit/secrets.toml
+
+# BigQuery credentials (IMPORTANT!)
+*.json
+
+# Localhost version with hardcoded credentials (IMPORTANT!)
+app_localhost.py
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
+*.pyc
