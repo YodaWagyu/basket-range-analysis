@@ -154,8 +154,4 @@ Click **"Deploy!"** and wait a moment. Your app will be deployed to Streamlit Cl
 
 ## 📄 License
 
-Internal use only - Commercial project
-
----
-
-**Happy Deploying! 🎉**
+Data Analyst Automation Projects - YodaWagyu
