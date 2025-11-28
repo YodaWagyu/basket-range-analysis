@@ -515,42 +515,52 @@ def generate_ai_insight(df, category, brand):
     ).reset_index()
 
     prompt = f"""
-    คุณคือ Business Data Analyst หน้าที่คือสรุป Insight และ Action จาก Basket Range ของ Category = {category}, Brand = {brand}
-    โดยใช้ Data: {lean_df.to_string(index=False)}
+    คุณคือ Business Data Analyst ที่เน้นกลยุทธ์ Pareto (80/20) อย่างเคร่งครัด
+    ช่วยวิเคราะห์ Basket Range สำหรับ Category = {category}, Brand = {brand}
+    
+    Data (ยึดข้อมูลตามตารางนี้เท่านั้น ห้ามคำนวณเองหรือมั่วตัวเลข):
+    {lean_df.to_string(index=False)}
 
-    --------------------------------
-    ⚠️ กฎเหล็ก (Strict Rules):
+    ---
+    ### คำสั่งสำคัญ (Critical Instructions):
+    1. **Data Accuracy (สำคัญที่สุด):**
+       - **Hero Range:** ให้ดูที่ `% Share Sales` สูงสุดในฝั่ง **CURRENT** (ปีปัจจุบัน)
+       - **Traffic Generator:** ให้ดูที่ `% Share Bills` สูงสุดในฝั่ง **CURRENT** (มักเป็นช่วงราคาต่ำกว่า Hero)
+       - **Comparison:** เวลาเทียบการเติบโต ให้เอาค่าจากช่อง Sales/Bills ของ **CURRENT** ลบกับ **SPLY** ให้ถูกคู่ ห้ามสลับปี
+    
+    2. **Focus on Mass:**
+       - ให้ความสำคัญเฉพาะ Basket Range ที่เป็นกลุ่ม Mass (รวมกันได้ 70-80% ของยอดขาย)
+       - **ห้าม** พูดถึง Range ที่มี `% Share Bills` ต่ำกว่า 5% (ตัด Niche/Outlier ทิ้งทันที)
 
-    1. **Logic การวิเคราะห์:**
-    - **Hero Range:** ช่วงราคาที่มี % SHARE SALES สูงที่สุดใน "ปีนี้ (CURRENT)"
-    - **Traffic Generator:** ช่วงราคาที่ "ต่ำกว่า Hero Range" และมี % SHARE BILLS สูง
-    - **Direction:** เน้นดันยอด **"ขึ้น"** เท่านั้น (Traffic -> Hero และ Hero -> Range ถัดไป) ห้ามเสนอให้ลดหรือถอยกลับ
+    3. **Human-Readable Numbers (English Units):**
+       - **ห้าม** พิมพ์ตัวเลขดิบยาวเหยียด (เช่น 23,925,840)
+       - **ยอดขาย:** ให้แปลงเป็นหน่วย **M THB** (เช่น 23.9M THB)
+       - **จำนวนบิล:** ให้แปลงเป็นหน่วย **K Bills** หรือ **M Bills** (เช่น 91K Bills, 1.4M Bills)
+       - ใช้ทศนิยมไม่เกิน 2 ตำแหน่ง
 
-    2. **รูปแบบตัวเลข (Number Format):**
-    - ยอดขาย: ใช้หน่วย **M THB** (เช่น 6,488.86 M THB)
-    - จำนวนบิล: ใช้หน่วย **K Bills** หรือ **M Bills** (เช่น 239.50 K Bills)
-    - **บังคับ:** ต้องมี comma คั่นหลักพัน และมีทศนิยม 2 ตำแหน่งเสมอ
+    4. **Formatting:**
+       - **ห้ามใช้ตัวหนา (**...**)** ในเนื้อหาเด็ดขาด
+       - ใช้ภาษาไทย อ่านง่าย กระชับ
 
-    3. **สไตล์การเขียน:**
-    - ห้ามเดาปี ค.ศ. ให้ใช้คำว่า "ปีก่อน (SPLY)" และ "ปีนี้ (CURRENT)" เท่านั้น
-    - **ห้ามใช้ Markdown formatting** (ห้ามตัวหนา **, ห้ามตัวเอียง, ห้ามขีดเส้น) ยกเว้นหัวข้อ ####
-    - ภาษาพูดเข้าใจง่าย กระชับ สำหรับทีมการตลาด
-
-    --------------------------------
-    รูปแบบคำตอบ (ตอบตามโครงสร้างนี้เท่านั้น):
+    ---
+    ### รูปแบบการตอบ (Output Format):
+    ตอบเป็นภาษาไทย แบ่งเป็น 3 หัวข้อ ใช้ Markdown Headings (####) และ Bullet points
 
     #### Insight
-    - Hero Range: ระบุช่วงราคา, ยอดขาย (M THB), และ % Share Sales ของปีนี้
-    - Traffic Generator: ระบุช่วงราคา, จำนวนบิล (K/M Bills), และ % Share Bills ของปีนี้
-    - การเปลี่ยนแปลง: เทียบ Hero Range ปีนี้ vs ปีก่อน (SPLY) ว่ายอดเพิ่ม/ลดกี่ M THB และสรุปว่าลูกค้าขยับขึ้นหรือยัง
+    - ระบุชัดเจนว่าช่วงราคาไหนคือ **Hero Range** (ยอดขายเท่าไหร่, % Share Sales เท่าไหร่)
+    - ระบุช่วงราคา **Traffic Generator** (บิลเท่าไหร่, % Share Bills เท่าไหร่)
+    - เปรียบเทียบ Hero Range ปีนี้ (Current) กับปีก่อน (SPLY) ว่ายอดขายเติบโตหรือลดลงกี่ M THB
+    - วิเคราะห์พฤติกรรมลูกค้า (Trade up/down) ในกลุ่ม Mass
 
     #### Action
-    - Action 1: วิธีขยับลูกค้า Traffic Generator (ของถูก) ให้เพิ่มยอดซื้อขึ้นมาปิดบิลที่ Hero Range
-    - Action 2: วิธีดันลูกค้า Hero Range ให้เพิ่มยอดเพื่อขยับไป Basket Range ที่สูงกว่าถัดไป (Next Step)
+    - Action 1: เสนอวิธีขยับลูกค้าจากกลุ่ม Traffic Generator (ของถูก) ให้ขึ้นมาสู่กลุ่ม Hero Range
+    - Action 2: เสนอวิธีขยับลูกค้าจากกลุ่ม Hero Range ให้ซื้อเพิ่มเพื่อแตะ **Range ถัดไปที่สูงขึ้น**
+    - ห้ามแนะนำกว้างๆ ให้ระบุว่า "กระตุ้นให้ซื้อเพิ่มเพื่อแตะยอด X บาท" (อิงตามขอบเขต Range ถัดไป)
 
     #### Suggest Basket Size
-    - ตัวเลขแนะนำ GWP: ระบุราคาเดียว (เช่น 249.00 THB)
-    - เหตุผล: ต้องเลือกจาก "ราคาเริ่มต้นของ Range ถัดไป" ที่อยู่ติดกับ Hero Range เพื่อให้ลูกค้าเอื้อมถึง
+    - แนะนำ **ตัวเลขเดียว** สำหรับทำ GWP (Gift With Purchase)
+    - **Logic:** ให้ใช้ตัวเลขที่เป็น **"ราคาเริ่มต้น (Lower Bound) ของ Range ถัดไป"** ที่อยู่ติดกับ Hero Range
+    - *เหตุผล:* เพื่อตั้งเป้าหมายที่ท้าทายแต่เป็นไปได้ (Achievable) สำหรับลูกค้ากลุ่มใหญ่ที่สุด
     """
 
 
